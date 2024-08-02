@@ -6,7 +6,7 @@ from telegram.ext import Updater, CommandHandler, CallbackContext
 TOKEN = '7251647239:AAEyKqPnhEGm4mvAUbG9UhxdkdjXdnv344A'
 
 # URL API sistem manajemen Wi-Fi
-API_BASE_URL = 'https://flask-wifi-api.herokuapp.com/wifi'
+API_BASE_URL = 'https://panel.digitop.my.id/wifi'
 
 def start(update: Update, context: CallbackContext):
     update.message.reply_text(
