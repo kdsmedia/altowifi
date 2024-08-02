@@ -31,7 +31,7 @@ def create_voucher(update: Update, context: CallbackContext):
 
         voucher_code = f'WIFI-{amount}-{duration}'
 
-        # Simulate creating a voucher (You need to replace this with actual API call)
+        # Simulate creating a voucher (Replace this with actual API call)
         # Example: Assuming there's an endpoint /create-voucher in the router API
         response = requests.post(f'{ROUTER_API_URL}/create-voucher', json={
             'voucher_code': voucher_code,
@@ -46,6 +46,9 @@ def create_voucher(update: Update, context: CallbackContext):
                 update.message.reply_photo(photo=qr_code_url)
         else:
             update.message.reply_text('Failed to create voucher.')
+
+    except ValueError:
+        update.message.reply_text('Invalid amount. Please enter a numeric value.')
 
 def check_status(update: Update, context: CallbackContext):
     try:
