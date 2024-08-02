@@ -47,9 +47,6 @@ def create_voucher(update: Update, context: CallbackContext):
         else:
             update.message.reply_text('Failed to create voucher.')
 
-    except ValueError:
-        update.message.reply_text('Invalid amount. Please enter a numeric value.')
-
 def check_status(update: Update, context: CallbackContext):
     try:
         # Example: Assuming there's an endpoint /status in the router API
