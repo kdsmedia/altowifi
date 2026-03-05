@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { AppState } from 'react-native';
 import { loadVouchers, saveVouchers, loadConfig, saveConfig as persistConfig } from '../utils/storage';
+import { calcRemaining } from '../utils/helpers';
 
 export function useAppState() {
   const [vouchers, setVouchers] = useState([]);
@@ -8,8 +10,10 @@ export function useAppState() {
     ssid2: 'WiFi_Extender', pass2: '',
   });
   const [loading, setLoading] = useState(true);
+  const [tick, setTick] = useState(0); // Force re-render trigger
   const intervalRef = useRef(null);
   const saveThrottle = useRef(0);
+  const appStateRef = useRef(AppState.currentState);
 
   // Load on mount
   useEffect(() => {
@@ -21,31 +25,71 @@ export function useAppState() {
     })();
   }, []);
 
-  // Real-time countdown engine
+  // AppState listener: when app returns from background, force re-calc
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (
+        appStateRef.current.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        // App came back to foreground — expire any vouchers that should have expired
+        setVouchers(prev => {
+          let changed = false;
+          const updated = prev.map(v => {
+            if (v.status !== 'active') return v;
+            const rem = calcRemaining(v.expiresAt);
+            if (rem <= 0) {
+              changed = true;
+              return { ...v, status: 'expired' };
+            }
+            return v;
+          });
+          if (changed) saveVouchers(updated);
+          return changed ? updated : prev;
+        });
+        // Force a tick to update displayed times
+        setTick(t => t + 1);
+      }
+      appStateRef.current = nextAppState;
+    });
+
+    return () => subscription.remove();
+  }, []);
+
+  // Real-time display tick (1 second interval)
+  // This only bumps a counter to trigger re-render. Actual remaining
+  // is always calculated from expiresAt timestamp, so background drift
+  // doesn't matter.
   useEffect(() => {
     if (loading) return;
 
     intervalRef.current = setInterval(() => {
+      // Check for newly-expired vouchers
       setVouchers(prev => {
         let changed = false;
-        const next = prev.map(v => {
+        const updated = prev.map(v => {
           if (v.status !== 'active') return v;
-          const rem = v.rem - 1;
+          const rem = calcRemaining(v.expiresAt);
           if (rem <= 0) {
             changed = true;
-            return { ...v, rem: 0, status: 'expired' };
+            return { ...v, status: 'expired' };
           }
-          return { ...v, rem };
+          return v;
         });
 
-        // Save periodically or on status change
+        // Persist on status change or every 30 ticks (~30s)
         saveThrottle.current++;
-        if (changed || saveThrottle.current >= 10) {
+        if (changed || saveThrottle.current >= 30) {
           saveThrottle.current = 0;
-          saveVouchers(next);
+          saveVouchers(updated);
         }
-        return next;
+
+        if (changed) return updated;
+        return prev;
       });
+
+      // Bump tick to re-render countdown display
+      setTick(t => t + 1);
     }, 1000);
 
     return () => {
@@ -95,6 +139,7 @@ export function useAppState() {
     config,
     stats,
     loading,
+    tick, // consumers use this to know when to re-read calcRemaining
     addVoucher,
     deleteVoucher,
     clearAll,

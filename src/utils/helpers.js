@@ -19,6 +19,16 @@ export function generateUsername() {
   return 'USER-' + Math.floor(100 + Math.random() * 899);
 }
 
+/**
+ * Calculate remaining seconds from an expiry timestamp.
+ * Returns 0 if already expired.
+ */
+export function calcRemaining(expiresAt) {
+  if (!expiresAt) return 0;
+  const diff = Math.floor((expiresAt - Date.now()) / 1000);
+  return diff > 0 ? diff : 0;
+}
+
 export const PLANS = [
   { hours: 1, price: 2000, label: '1 Jam' },
   { hours: 5, price: 5000, label: '5 Jam' },

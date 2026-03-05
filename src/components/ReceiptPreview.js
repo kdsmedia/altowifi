@@ -1,5 +1,5 @@
 import React, { useRef, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform as RNPlatform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import ViewShot from 'react-native-view-shot';
 import * as FileSystem from 'expo-file-system';
@@ -15,23 +15,31 @@ export default function ReceiptPreview({ voucher, onClose }) {
 
   const handleDownload = useCallback(async () => {
     try {
-      if (!viewShotRef.current || !viewShotRef.current.capture) {
+      if (!viewShotRef.current) {
         Alert.alert('Error', 'Gagal menginisialisasi capture.');
         return;
       }
-      const uri = await viewShotRef.current.capture();
 
-      if (RNPlatform.OS === 'web') {
-        Alert.alert('Info', 'Download tidak tersedia di web.');
-        return;
-      }
+      const uri = await viewShotRef.current.capture();
 
       const filename = `Voucher_${voucher.id}.png`;
       const destPath = `${FileSystem.cacheDirectory}${filename}`;
 
-      // If capture returns a different location, copy it
+      // Copy captured image to a known cache path
       if (uri !== destPath) {
-        await FileSystem.copyAsync({ from: uri, to: destPath });
+        try {
+          await FileSystem.copyAsync({ from: uri, to: destPath });
+        } catch {
+          // If copy fails (same path or permission), try using the original URI
+          const isAvailable = await Sharing.isAvailableAsync();
+          if (isAvailable) {
+            await Sharing.shareAsync(uri, {
+              mimeType: 'image/png',
+              dialogTitle: 'Simpan Voucher',
+            });
+          }
+          return;
+        }
       }
 
       const isAvailable = await Sharing.isAvailableAsync();
@@ -41,19 +49,21 @@ export default function ReceiptPreview({ voucher, onClose }) {
           dialogTitle: 'Simpan Voucher',
         });
       } else {
-        Alert.alert('Berhasil', `Voucher disimpan: ${filename}`);
+        Alert.alert('Berhasil', `Voucher disimpan di cache: ${filename}`);
       }
     } catch (err) {
       console.error('Download error:', err);
-      Alert.alert('Error', 'Gagal mengunduh gambar: ' + (err.message || ''));
+      Alert.alert('Error', 'Gagal mengunduh gambar: ' + (err.message || String(err)));
     }
-  }, [voucher]);
+  }, [voucher.id]);
+
+  const monoFont = Platform.OS === 'ios' ? 'Courier' : 'monospace';
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Preview Struk</Text>
-        <TouchableOpacity onPress={onClose}>
+        <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Text style={styles.closeBtn}>Tutup</Text>
         </TouchableOpacity>
       </View>
@@ -63,13 +73,14 @@ export default function ReceiptPreview({ voucher, onClose }) {
         options={{ format: 'png', quality: 1.0, result: 'tmpfile' }}
         style={styles.receipt}
       >
-        <View style={styles.receiptInner}>
-          <Text style={styles.receiptBrand}>ALTOWIFI</Text>
-          <Text style={styles.receiptSubtitle}>INTERNET PREMIUM DANI</Text>
-          <View style={styles.dividerDashed} />
+        <View collapsable={false} style={styles.receiptInner}>
+          <Text style={[styles.receiptBrand, { fontFamily: monoFont }]}>ALTOWIFI</Text>
+          <Text style={[styles.receiptSubtitle, { fontFamily: monoFont }]}>INTERNET PREMIUM DANI</Text>
 
-          <Text style={styles.receiptHeading}>Akses WiFi Otomatis</Text>
-          <Text style={styles.receiptDate}>{voucher.date}</Text>
+          <View style={styles.dashedDivider} />
+
+          <Text style={[styles.receiptHeading, { fontFamily: monoFont }]}>Akses WiFi Otomatis</Text>
+          <Text style={[styles.receiptDate, { fontFamily: monoFont }]}>{voucher.date}</Text>
 
           <View style={styles.qrContainer}>
             <QRCode value={qrValue} size={200} backgroundColor="#fff" color="#000" />
@@ -77,20 +88,20 @@ export default function ReceiptPreview({ voucher, onClose }) {
 
           <View style={styles.detailsContainer}>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>SSID:</Text>
-              <Text style={styles.detailValue}>{voucher.ssid}</Text>
+              <Text style={[styles.detailLabel, { fontFamily: monoFont }]}>SSID:</Text>
+              <Text style={[styles.detailValue, { fontFamily: monoFont }]}>{voucher.ssid}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>USER:</Text>
-              <Text style={styles.detailValue}>{voucher.user.toUpperCase()}</Text>
+              <Text style={[styles.detailLabel, { fontFamily: monoFont }]}>USER:</Text>
+              <Text style={[styles.detailValue, { fontFamily: monoFont }]}>{voucher.user.toUpperCase()}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>DURASI:</Text>
-              <Text style={styles.detailValue}>{voucher.h} JAM</Text>
+              <Text style={[styles.detailLabel, { fontFamily: monoFont }]}>DURASI:</Text>
+              <Text style={[styles.detailValue, { fontFamily: monoFont }]}>{voucher.h} JAM</Text>
             </View>
             <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
-              <Text style={styles.detailLabel}>TARIF:</Text>
-              <Text style={styles.detailValue}>{formatRupiah(voucher.price)}</Text>
+              <Text style={[styles.detailLabel, { fontFamily: monoFont }]}>TARIF:</Text>
+              <Text style={[styles.detailValue, { fontFamily: monoFont }]}>{formatRupiah(voucher.price)}</Text>
             </View>
           </View>
         </View>
@@ -139,7 +150,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '900',
     color: '#000',
-    fontFamily: RNPlatform.OS === 'ios' ? 'Courier' : 'monospace',
     letterSpacing: 2,
   },
   receiptSubtitle: {
@@ -153,27 +163,26 @@ const styles = StyleSheet.create({
     borderBottomColor: '#000',
     width: '100%',
     textAlign: 'center',
-    fontFamily: RNPlatform.OS === 'ios' ? 'Courier' : 'monospace',
   },
-  dividerDashed: {
+  dashedDivider: {
     width: '100%',
-    height: 0,
-    marginVertical: 0,
+    height: 1,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: '#000',
+    marginVertical: 16,
   },
   receiptHeading: {
     fontSize: 16,
     fontWeight: '700',
     color: '#000',
     textTransform: 'uppercase',
-    marginTop: 20,
-    fontFamily: RNPlatform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   receiptDate: {
     fontSize: 10,
     color: 'rgba(0,0,0,0.5)',
     marginTop: 4,
     marginBottom: 20,
-    fontFamily: RNPlatform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   qrContainer: {
     padding: 8,
@@ -193,13 +202,11 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 14,
     color: '#000',
-    fontFamily: RNPlatform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   detailValue: {
     fontSize: 14,
     fontWeight: '700',
     color: '#000',
-    fontFamily: RNPlatform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   downloadBtn: {
     backgroundColor: '#0f172a',

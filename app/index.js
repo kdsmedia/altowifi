@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Image, Platform,
-  ActivityIndicator,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Image,
+  ActivityIndicator, Platform, StatusBar as RNStatusBar,
 } from 'react-native';
 import { useAppState } from '../src/hooks/useAppState';
 import StatsCard from '../src/components/StatsCard';
@@ -16,7 +16,7 @@ const LOGO_IMG = require('../assets/logo.png');
 
 export default function HomeScreen() {
   const {
-    vouchers, config, stats, loading,
+    vouchers, config, stats, loading, tick,
     addVoucher, deleteVoucher, clearAll, updateConfig,
   } = useAppState();
 
@@ -45,7 +45,7 @@ export default function HomeScreen() {
   }, [addVoucher, showAlert]);
 
   const handleDeleteVoucher = useCallback((id) => {
-    const v = vouchers.find(v => v.id === id);
+    const v = vouchers.find(x => x.id === id);
     showAlert(
       'Hapus Voucher?',
       `Voucher ${v?.user || ''} akan dihapus.`,
@@ -69,6 +69,10 @@ export default function HomeScreen() {
     setSettingsVisible(false);
     showAlert('Berhasil', 'Pengaturan disimpan');
   }, [updateConfig, showAlert]);
+
+  const handlePreview = useCallback((voucher) => {
+    setPreviewVoucher(voucher);
+  }, []);
 
   if (loading) {
     return (
@@ -141,7 +145,8 @@ export default function HomeScreen() {
             <VoucherItem
               key={v.id}
               voucher={v}
-              onPreview={setPreviewVoucher}
+              tick={tick}
+              onPreview={handlePreview}
               onDelete={handleDeleteVoucher}
             />
           ))
@@ -173,10 +178,13 @@ export default function HomeScreen() {
   );
 }
 
+const STATUSBAR_HEIGHT = Platform.OS === 'android' ? (RNStatusBar.currentHeight || 0) : 0;
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#f1f5f9',
+    paddingTop: STATUSBAR_HEIGHT,
   },
   loadingContainer: {
     flex: 1,
@@ -190,7 +198,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 14,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: 'rgba(255,255,255,0.95)',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },

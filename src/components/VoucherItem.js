@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { formatTime, formatRupiah } from '../utils/helpers';
+import { formatTime, formatRupiah, calcRemaining } from '../utils/helpers';
 
-export default function VoucherItem({ voucher, onPreview, onDelete }) {
-  const perc = voucher.tot > 0 ? (voucher.rem / voucher.tot) * 100 : 0;
+function VoucherItem({ voucher, tick, onPreview, onDelete }) {
+  const rem = voucher.status === 'active' ? calcRemaining(voucher.expiresAt) : 0;
+  const perc = voucher.tot > 0 ? (rem / voucher.tot) * 100 : 0;
   const barColor =
-    voucher.rem < 600 ? '#ef4444' : voucher.rem < 3600 ? '#f59e0b' : '#3b82f6';
+    rem < 600 ? '#ef4444' : rem < 3600 ? '#f59e0b' : '#3b82f6';
   const isExpired = voucher.status === 'expired';
 
   return (
@@ -14,14 +15,14 @@ export default function VoucherItem({ voucher, onPreview, onDelete }) {
         <View style={styles.topRow}>
           <Text style={styles.userName} numberOfLines={1}>{voucher.user}</Text>
           <Text style={[styles.timer, isExpired ? styles.timerExpired : styles.timerActive]}>
-            {formatTime(voucher.rem)}
+            {isExpired ? 'Selesai' : formatTime(rem)}
           </Text>
         </View>
         <View style={styles.info}>
           <Text style={styles.infoText}>{voucher.ssid} • {voucher.h} Jam • {formatRupiah(voucher.price)}</Text>
         </View>
         <View style={styles.barBg}>
-          <View style={[styles.barFill, { width: `${perc}%`, backgroundColor: barColor }]} />
+          <View style={[styles.barFill, { width: `${Math.max(0, Math.min(100, perc))}%`, backgroundColor: barColor }]} />
         </View>
       </View>
       <View style={styles.actions}>
@@ -35,6 +36,8 @@ export default function VoucherItem({ voucher, onPreview, onDelete }) {
     </View>
   );
 }
+
+export default React.memo(VoucherItem);
 
 const styles = StyleSheet.create({
   card: {

@@ -21,13 +21,14 @@ export default function CreateModal({ visible, onClose, config, onSubmit }) {
     }
 
     const name = username.trim() || generateUsername();
+    const now = Date.now();
     const voucher = {
-      id: Date.now(),
+      id: now,
       user: name,
       price: plan.price,
       h: plan.hours,
-      rem: plan.hours * 3600,
       tot: plan.hours * 3600,
+      expiresAt: now + plan.hours * 3600 * 1000,
       status: 'active',
       ssid,
       pass,
@@ -169,10 +170,11 @@ const styles = StyleSheet.create({
   planGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    justifyContent: 'space-between',
+    rowGap: 8,
   },
   planBtn: {
-    width: '48%',
+    flexBasis: '48%',
     padding: 12,
     borderRadius: 12,
     borderWidth: 2,
