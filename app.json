@@ -15,7 +15,15 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.altomedia.altowifi"
+      "bundleIdentifier": "com.altomedia.altowifi",
+      "infoPlist": {
+        "NSCameraUsageDescription": "AltoWIFI membutuhkan akses kamera untuk scan QR code WiFi",
+        "NSMicrophoneUsageDescription": "AltoWIFI membutuhkan akses mikrofon untuk fitur voice",
+        "NSLocationWhenInUseUsageDescription": "AltoWIFI membutuhkan lokasi untuk mendeteksi jaringan WiFi terdekat",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "AltoWIFI membutuhkan lokasi untuk monitoring jaringan WiFi",
+        "NSContactsUsageDescription": "AltoWIFI membutuhkan akses kontak untuk mengelola data pelanggan",
+        "NSPhotoLibraryUsageDescription": "AltoWIFI membutuhkan akses galeri untuk menyimpan struk voucher"
+      }
     },
     "android": {
       "package": "com.altomedia.altowifi",
@@ -24,7 +32,37 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1e40af"
-      }
+      },
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_WIFI_STATE",
+        "CHANGE_WIFI_STATE",
+        "CAMERA",
+        "RECORD_AUDIO",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "READ_CONTACTS",
+        "WRITE_CONTACTS",
+        "SEND_SMS",
+        "READ_SMS",
+        "RECEIVE_SMS",
+        "READ_PHONE_STATE",
+        "CALL_PHONE",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "WAKE_LOCK",
+        "POST_NOTIFICATIONS",
+        "BLUETOOTH",
+        "BLUETOOTH_ADMIN",
+        "BLUETOOTH_CONNECT",
+        "BLUETOOTH_SCAN",
+        "NFC",
+        "FLASHLIGHT",
+        "FOREGROUND_SERVICE"
+      ]
     },
     "platforms": ["android", "ios"],
     "plugins": [
