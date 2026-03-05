@@ -2,7 +2,6 @@
   "expo": {
     "name": "AltoWIFI",
     "slug": "altowifiapp",
-    "owner": "kdsmedia",
     "version": "2.5.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
