@@ -1,7 +1,8 @@
 {
   "expo": {
     "name": "AltoWIFI",
-    "slug": "AltoWIFI",
+    "slug": "altowifiapp",
+    "owner": "kdsmedia",
     "version": "2.5.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -42,7 +43,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": ""
+        "projectId": "c8be9f9c-0e6c-496a-8b90-164370e69f4a"
       }
     },
     "scheme": "altowifi"
